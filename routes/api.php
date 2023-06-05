@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth', [\App\Http\Controllers\UserAuthController::class, 'userAuth']);
 Route::post('/artist-auth', [\App\Http\Controllers\ArtistAuthController::class, 'artistAuth']);
+Route::post('/register', [\App\Http\Controllers\UserAuthController::class, 'register']);
+Route::post('/artist-register', [\App\Http\Controllers\ArtistAuthController::class, 'artistRegister']);
 
 Route::middleware(['api.user'])->prefix('user')->group(function () {
     Route::get('/home', [\App\Http\Controllers\UserController::class, 'home']);

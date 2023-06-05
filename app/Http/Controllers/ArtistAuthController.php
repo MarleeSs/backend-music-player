@@ -50,4 +50,55 @@ class ArtistAuthController extends Controller
         ], 200);
     }
 
+    public function artistRegister(Request $request): JsonResponse
+    {
+        try {
+            $v = Validator::make($request->all(), [
+                'fullName' => 'required|string',
+                'email' => 'required|email',
+                'password' => 'required|string',
+                'role' => 'required|string',
+                'image' => 'required|image|mimes:jpeg,png,jpg',
+            ]);
+
+            if ($v->fails()) {
+                return response()->json([
+                    'message' => $v->errors()->first(),
+                    'statusCode' => 400,
+                ], 400);
+            }
+
+            // get if artist already exists
+            $artist = Artist::where('email', $request->email)->first();
+            if ($artist) {
+                return response()->json([
+                    'message' => 'Email already exists',
+                    'statusCode' => 400,
+                ], 400);
+            }
+
+            $image = $request->file('image');
+            $fileName = now()->timestamp . '_' . $request->image->getClientOriginalName();
+            $image->move('uploads', $fileName);
+
+            $artist = new Artist();
+            $artist->full_name = $request->fullName;
+            $artist->image = 'uploads/' . $fileName;
+            $artist->email = $request->email;
+            $artist->password = $request->password;
+            $artist->role = $request->role;
+            $artist->save();
+
+            return response()->json([
+                'message' => 'Register successful',
+                'statusCode' => 200,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Register failed',
+                'statusCode' => 500,
+            ], 500);
+        }
+    }
+
 }

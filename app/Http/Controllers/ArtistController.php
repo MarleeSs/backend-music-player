@@ -168,7 +168,7 @@ class ArtistController extends Controller
     {
         $album = Album::find($albumId);
         $album->delete();
-
+        unlink($album->image);
         return response()->json([
             'message' => 'Album deleted successfully',
         ]);
@@ -257,7 +257,6 @@ class ArtistController extends Controller
     public function deleteSong(Request $request, $albumId, $songId): JsonResponse
     {
         $artistId = $request->userId;
-
         if (Album::where('artist_id', $artistId)->where('id', $albumId)->doesntExist()) {
             return response()->json([
                 'message' => 'Album not found',
@@ -274,6 +273,7 @@ class ArtistController extends Controller
 
         $song = Song::where('album_id', $albumId)->where('id', $songId)->first();
         $song->delete();
+        unlink($song->audio_path);
 
         return response()->json([
             'message' => 'Song deleted successfully',
