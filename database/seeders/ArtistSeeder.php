@@ -16,8 +16,8 @@ class ArtistSeeder extends Seeder
     public function run()
     {
         Artist::create([
-            'full_name' => 'Artist',
-            'email' => 'artist@coba.com',
+            'full_name' => 'Artist 2',
+            'email' => 'artist2@coba.com',
             'password' => 'artist',
             'image' => 'default.png',
         ]);

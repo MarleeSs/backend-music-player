@@ -45,7 +45,7 @@ class ArtistAuthController extends Controller
                 'artistId' => $artist['id'],
                 'role' => 'artist'
             ],
-            'token' => "{$token}"
+            'token' => $token
         ], 200);
     }
 

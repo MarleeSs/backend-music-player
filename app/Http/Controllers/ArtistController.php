@@ -18,10 +18,10 @@ class ArtistController extends Controller
      */
     public function createAlbum(Request $request): JsonResponse
     {
+
         $validator = Validator::make($request->all(), [
             'title' => 'required|string',
             'image' => 'required|image|mimes:jpeg,png,jpg',
-            'artist_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -38,7 +38,7 @@ class ArtistController extends Controller
         $album = Album::create([
             'title' => $albumData['title'],
             'image' => 'uploads/' . $fileName,
-            'artist_id' => $albumData['artist_id'],
+            'artist_id' => $request->userId,
         ]);
 
         return response()->json([
@@ -47,9 +47,10 @@ class ArtistController extends Controller
         ]);
     }
 
-    public function getAllAlbums(): JsonResponse
+    public function getAllAlbums(Request $request): JsonResponse
     {
-        $albums = Album::all();
+        $artistId = $request->userId;
+        $albums = Album::where('artist_id', $artistId)->get();
 
         return response()->json([
             'message' => 'Albums retrieved successfully',
@@ -59,10 +60,18 @@ class ArtistController extends Controller
         ]);
     }
 
-    public function getAlbumById($id): JsonResponse
+    public function getAlbumById(Request $request, $albumId): JsonResponse
     {
-        $album = Album::find($id);
-        $song = Song::where('album_id', $id)->get();
+        $artistId = $request->userId;
+        if (Album::where('artist_id', $artistId)->where('id', $albumId)->doesntExist()) {
+            return response()->json([
+                'message' => 'Album not found',
+                'data' => null,
+            ], 404);
+        }
+
+        $album = Album::where('artist_id', $artistId)->where('id', $albumId)->first();
+        $song = Song::where('album_id', $album->id)->get();
 
         return response()->json([
             'message' => 'Album retrieved successfully',
@@ -77,7 +86,7 @@ class ArtistController extends Controller
      * @throws ValidationException
      * @throws \Exception
      */
-    public function updateAlbum(Request $request, $id): JsonResponse
+    public function updateAlbum(Request $request, $albumId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'title' => 'string',
@@ -91,7 +100,7 @@ class ArtistController extends Controller
 
         $albumData = $validator->validated();
 
-        $album = Album::find($id);
+        $album = Album::find($albumId);
         if (isset($albumData['title'])) {
             $album->title = $albumData['title'];
         }
@@ -112,9 +121,9 @@ class ArtistController extends Controller
         ]);
     }
 
-    public function deleteAlbum($id): JsonResponse
+    public function deleteAlbum($albumId): JsonResponse
     {
-        $album = Album::find($id);
+        $album = Album::find($albumId);
         $album->delete();
 
         return response()->json([
@@ -126,13 +135,12 @@ class ArtistController extends Controller
      * @throws ValidationException
      * @throws \Exception
      */
-    public function createSong(Request $request): JsonResponse
+    public function createSong(Request $request, $albumId): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string',
             'audio' => 'required|mimes:mp3',
             'duration' => 'required|integer',
-            'album_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -150,7 +158,7 @@ class ArtistController extends Controller
             'title' => $songData['title'],
             'audio_path' => 'uploads/' . $fileName,
             'duration' => $songData['duration'],
-            'album_id' => $songData['album_id'],
+            'album_id' => $albumId,
         ]);
 
         return response()->json([
@@ -159,9 +167,17 @@ class ArtistController extends Controller
         ]);
     }
 
-    public function getAllSongs(): JsonResponse
+    public function getAllSongs(Request $request, $albumId): JsonResponse
     {
-        $songs = Song::all();
+        $artistId = $request->userId;
+        if (Album::where('artist_id', $artistId)->where('id', $albumId)->doesntExist()) {
+            return response()->json([
+                'message' => 'Album not found',
+                'data' => null,
+            ], 404);
+        }
+
+        $songs = Song::where('album_id', $albumId)->get();
 
         return response()->json([
             'message' => 'Songs retrieved successfully',
@@ -169,9 +185,25 @@ class ArtistController extends Controller
         ]);
     }
 
-    public function getSongById($id): JsonResponse
+    public function getSongById(Request $request, $albumId, $songId): JsonResponse
     {
-        $song = Song::find($id);
+        $artistId = $request->userId;
+
+        if (Album::where('artist_id', $artistId)->where('id', $albumId)->doesntExist()) {
+            return response()->json([
+                'message' => 'Album not found',
+                'data' => null,
+            ], 404);
+        }
+
+        if (Song::where('album_id', $albumId)->where('id', $songId)->doesntExist()) {
+            return response()->json([
+                'message' => 'Song not found',
+                'data' => null,
+            ], 404);
+        }
+
+        $song = Song::where('album_id', $albumId)->where('id', $songId)->first();
 
         return response()->json([
             'message' => 'Song retrieved successfully',
@@ -179,9 +211,25 @@ class ArtistController extends Controller
         ]);
     }
 
-    public function deleteSong($id): JsonResponse
+    public function deleteSong(Request $request, $albumId, $songId): JsonResponse
     {
-        $song = Song::find($id);
+        $artistId = $request->userId;
+
+        if (Album::where('artist_id', $artistId)->where('id', $albumId)->doesntExist()) {
+            return response()->json([
+                'message' => 'Album not found',
+                'data' => null,
+            ], 404);
+        }
+
+        if (Song::where('album_id', $albumId)->where('id', $songId)->doesntExist()) {
+            return response()->json([
+                'message' => 'Song not found',
+                'data' => null,
+            ], 404);
+        }
+
+        $song = Song::where('album_id', $albumId)->where('id', $songId)->first();
         $song->delete();
 
         return response()->json([

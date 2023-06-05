@@ -22,6 +22,10 @@ class AdminMiddleware
         try {
             $token = $request->bearerToken();
             $decode = JWT::decode($token, new Key(env('JWT_SECRET_KEY'), 'HS256'));
+            $request->merge([
+                'userId' => $decode->userId,
+                'role' => $decode->role,
+            ]);
             return $decode->role == 'admin' ? $next($request) : response()->json('Access Denied', 401);
         } catch (ExpiredException $e) {
             return response()->json('Token Expired', 400);

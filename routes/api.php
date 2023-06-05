@@ -17,24 +17,32 @@ use Illuminate\Support\Facades\Route;
 Route::post('auth', [\App\Http\Controllers\UserAuthController::class, 'userAuth']);
 Route::post('artist-auth', [\App\Http\Controllers\ArtistAuthController::class, 'artistAuth']);
 
-Route::middleware(['api.user'])->prefix('user')->group(function (){
+Route::middleware(['api.user'])->prefix('user')->group(function () {
     Route::get('home', [\App\Http\Controllers\UserController::class, 'home']);
     Route::post('like/{songId}', [\App\Http\Controllers\UserController::class, 'likeSong']);
     Route::post('unlike/{songId}', [\App\Http\Controllers\UserController::class, 'unlikeSong']);
+    Route::get('songs/like', [\App\Http\Controllers\UserController::class, 'getLikeSongs']);
+    Route::get('account', [\App\Http\Controllers\UserController::class, 'getAccount']);
 });
 
-Route::middleware(['api.artist'])->prefix('artist')->group(function (){
+Route::middleware(['api.artist'])->prefix('artist')->group(function () {
+    Route::prefix('albums')->group(function () {
 
-    // CRUD Album
-    Route::post('albums', [\App\Http\Controllers\ArtistController::class, 'createAlbum']);
-    Route::get('albums', [\App\Http\Controllers\ArtistController::class, 'getAllAlbums']);
-    Route::get('albums/{id}', [\App\Http\Controllers\ArtistController::class, 'getAlbumById']);
-    Route::patch('albums/{id}', [\App\Http\Controllers\ArtistController::class, 'updateAlbum']);
-    Route::delete('albums/{id}', [\App\Http\Controllers\ArtistController::class, 'deleteAlbum']);
+        // CRUD Album
+        Route::post('/', [\App\Http\Controllers\ArtistController::class, 'createAlbum']);
+        Route::get('/', [\App\Http\Controllers\ArtistController::class, 'getAllAlbums']);
+        Route::get('/{albumId}', [\App\Http\Controllers\ArtistController::class, 'getAlbumById']);
+        Route::patch('/{albumId}', [\App\Http\Controllers\ArtistController::class, 'updateAlbum']);
+        Route::delete('/{albumId}', [\App\Http\Controllers\ArtistController::class, 'deleteAlbum']);
 
-    // CRUD Song
-    Route::post('songs', [\App\Http\Controllers\ArtistController::class, 'createSong']);
-    Route::get('songs', [\App\Http\Controllers\ArtistController::class, 'getAllSongs']);
-    Route::get('songs/{id}', [\App\Http\Controllers\ArtistController::class, 'getSongById']);
-    Route::delete('songs/{id}', [\App\Http\Controllers\ArtistController::class, 'deleteSong']);
+        // CRUD Song
+        Route::post('/{albumId}/songs', [\App\Http\Controllers\ArtistController::class, 'createSong']);
+        Route::get('/{albumId}/songs', [\App\Http\Controllers\ArtistController::class, 'getAllSongs']);
+        Route::get('/{albumId}/songs/{songId}', [\App\Http\Controllers\ArtistController::class, 'getSongById']);
+        Route::delete('/{albumId}/songs/{songId}', [\App\Http\Controllers\ArtistController::class, 'deleteSong']);
+    });
+});
+
+Route::middleware(['api.admin'])->prefix('admin')->group(function () {
+    Route::post('approve/{songId}', [\App\Http\Controllers\AdminController::class, 'approve']);
 });

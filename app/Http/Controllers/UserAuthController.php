@@ -40,13 +40,14 @@ class UserAuthController extends Controller
             $token = JWT::encode($payload, env('JWT_SECRET_KEY'), 'HS256');
 
             return response()->json([
+                'message' => 'Successful login',
+                'statusCode' => 200,
                 'data' => [
-                    'message' => 'Successful login',
                     'fullName' => Auth::user()->full_name,
                     'userId' => Auth::user()->id,
                     'role' => Auth::user()->role
                 ],
-                'token' => "{$token}"
+                'token' => $token
             ], 200);
         }
 
