@@ -14,14 +14,19 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
-    public function home(): JsonResponse
+    public function home(Request $request): JsonResponse
     {
+        $isLike = false;
+        $user = $request->userId;
         $songs = Song::orderBy('likes', 'desc')->take(100)->get();
         $albums = Album::whereIn('id', $songs->pluck('album_id'))->get();
         $artists = Artist::whereIn('id', $albums->pluck('artist_id'))->get();
+        $playlist = Playlist::where('user_id', $user)->first();
 
         $data = [];
         foreach ($songs as $song) {
+            $isLike = (bool)TransactionPlaylist::where('playlist_id', $playlist->id)->where('song_id', $song->id)->first();
+
             $data[] = [
                 'artist' => [
                     'id' => $artists->where('id', $albums->where('id', $song->album_id)->first()->artist_id)->first()->id,
@@ -37,6 +42,7 @@ class UserController extends Controller
                 'likes' => $song->likes,
                 'duration' => $song->duration,
                 'audioUrl' => url($song->audio_path),
+                'isLike' => $isLike,
             ];
         }
 
@@ -143,5 +149,53 @@ class UserController extends Controller
                 'image' => $userData->image,
             ],
         ]);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $user = $request->userId;
+        $query = $request->query('q');
+        if (empty($query)) {
+            return response()->json([
+                'message' => 'No Result',
+                'statusCode' => 200
+            ], 200);
+        }
+
+        $keyword = strtolower($query);
+        $songs = Song::whereRaw('LOWER(title) LIKE ?', ["%{$keyword}%"])->get();
+        $albums = Album::whereIn('id', $songs->pluck('album_id'))->get();
+        $artists = Artist::whereIn('id', $albums->pluck('artist_id'))->get();
+        $artistsQuery = Artist::whereRaw('LOWER(full_name) LIKE ?', ["%{$keyword}%"])->get();
+
+        $data = [];
+
+        foreach ($songs as $song) {
+            $data[] = [
+                'artist' => [
+                    'id' => $artists->where('id', $albums->where('id', $song->album_id)->first()->artist_id)->first()->id,
+                    'fullName' => $artists->where('id', $albums->where('id', $song->album_id)->first()->artist_id)->first()->full_name,
+                ],
+                'album' => [
+                    'id' => $albums->where('id', $song->album_id)->first()->id,
+                    'title' => $albums->where('id', $song->album_id)->first()->title,
+                    'image' => url($albums->where('id', $song->album_id)->first()->image),
+                ],
+                'id' => $song->id,
+                'title' => $song->title,
+                'likes' => $song->likes,
+                'duration' => $song->duration,
+                'audioUrl' => url($song->audio_path),
+            ];
+        }
+
+        return response()->json([
+            'message' => 'Search successful',
+            'statusCode' => 200,
+            'data' => [
+                'songs' => $data,
+                'artists' => $artistsQuery
+            ]
+        ], 200);
     }
 }

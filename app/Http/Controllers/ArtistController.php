@@ -43,7 +43,12 @@ class ArtistController extends Controller
 
         return response()->json([
             'message' => 'Album created successfully',
-            'data' => $album,
+            'data' => [
+                'id' => $album->id,
+                'title' => $album->title,
+                'image' => url($album->image),
+                'artistId' => $album->artist_id,
+            ],
         ]);
     }
 
@@ -51,12 +56,34 @@ class ArtistController extends Controller
     {
         $artistId = $request->userId;
         $albums = Album::where('artist_id', $artistId)->get();
+        $data = [];
+        foreach ($albums as $album) {
+            $songs = Song::where('album_id', $album->id)->get();
+            $songData = [];
+            foreach ($songs as $song) {
+                $songData[] = [
+                    'id' => $song->id,
+                    'title' => $song->title,
+                    'likes' => $song->likes,
+                    'duration' => $song->duration,
+                    'status' => $song->status,
+                    'release' => $song->created_at,
+                    'audioUrl' => url($song->audio_path),
+                    'albumId' => $song->album_id,
+                ];
+            }
+
+            $data[] = [
+                'id' => $album->id,
+                'title' => $album->title,
+                'image' => url($album->image),
+                'songs' => $songData
+            ];
+        }
 
         return response()->json([
             'message' => 'Albums retrieved successfully',
-            'data' => [
-                $albums
-            ],
+            'data' => $data
         ]);
     }
 
@@ -71,14 +98,30 @@ class ArtistController extends Controller
         }
 
         $album = Album::where('artist_id', $artistId)->where('id', $albumId)->first();
-        $song = Song::where('album_id', $album->id)->get();
+        $songs = Song::where('album_id', $album->id)->get();
+        $songData = [];
+        foreach ($songs as $song) {
+            $songData[] = [
+                'id' => $song->id,
+                'title' => $song->title,
+                'likes' => $song->likes,
+                'duration' => $song->duration,
+                'status' => $song->status,
+                'release' => $song->created_at,
+                'audioUrl' => url($song->audio_path),
+                'albumId' => $song->album_id,
+            ];
+        }
 
         return response()->json([
             'message' => 'Album retrieved successfully',
             'data' => [
-                'albums' => $album,
-                'songs' => $song
-            ],
+                'id' => $album->id,
+                'title' => $album->title,
+                'image' => url($album->image),
+                'publishDate' => $album->created_at,
+                'songs' => $songData
+            ]
         ]);
     }
 
@@ -139,7 +182,7 @@ class ArtistController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string',
-            'audio' => 'required|mimes:mp3',
+            'audio' => 'required|mimes:mp3,mpeg',
             'duration' => 'required|integer',
         ]);
 

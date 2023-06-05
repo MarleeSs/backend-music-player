@@ -39,8 +39,9 @@ class ArtistAuthController extends Controller
         $token = JWT::encode($payload, env('JWT_SECRET_KEY'), 'HS256');
 
         return response()->json([
+            'message' => 'Successful login',
+            'statusCode' => 200,
             'data' => [
-                'message' => 'Successful login',
                 'fullName' => $artist['full_name'],
                 'artistId' => $artist['id'],
                 'role' => 'artist'
